@@ -1,0 +1,6 @@
+-- create smcdb1 database
+USE master;
+GO
+CREATE DATABASE smcdb1
+COLLATE Modern_Spanish_CI_AI;
+GO
