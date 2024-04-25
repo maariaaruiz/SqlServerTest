@@ -257,3 +257,106 @@ CREATE TABLE Sales.InvoicesDetail(
 );
 
 GO
+
+-- create trigger when insert InvoicesDetail or update TotalLine in InvoicesDetail
+
+USE smcdb1;
+GO 
+
+CREATE OR ALTER TRIGGER UpdateTotalIfUpdateDetail
+ON Sales.InvoicesDetail
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    IF UPDATE(Quantity) OR UPDATE(UnitPrice) OR UPDATE(Discount) OR UPDATE(VatTypeId)
+    BEGIN
+        UPDATE Sales.InvoicesDetail
+        SET 
+        TotalLine = inserted.Quantity *  
+            ((inserted.UnitPrice * ((100 - ISNULL(inserted.Discount, 0)) / 100)) + 
+            ((inserted.UnitPrice * ((100 - ISNULL(inserted.Discount, 0)) / 100)) * 
+            (ISNULL((SELECT Rate FROM Sales.VatTypes WHERE VatTypeId = inserted.VatTypeId), 0) / 100)))
+        FROM inserted
+        WHERE Sales.InvoicesDetail.InvoiceId = inserted.InvoiceId AND Sales.InvoicesDetail.RowNumber = inserted.RowNumber;
+    END;
+
+    BEGIN 
+    UPDATE inh
+    SET 
+        TaxBase = (SELECT SUM(ind.Quantity * ((ind.UnitPrice * ((100 - ISNULL(ind.Discount, 0)) / 100)))) 
+                    FROM Sales.InvoicesDetail AS ind 
+                    WHERE ind.InvoiceId = inh.InvoiceId), 
+        TotalVat = (SELECT SUM(ind.TotalLine - (ind.Quantity * ((ind.UnitPrice * ((100 - ISNULL(ind.Discount, 0)) / 100))))) 
+                    FROM Sales.InvoicesDetail AS ind 
+                    WHERE ind.InvoiceId = inh.InvoiceId),
+        Total = (SELECT SUM(ind.TotalLine) 
+                FROM Sales.InvoicesDetail AS ind 
+                WHERE ind.InvoiceId = inh.InvoiceId)
+    FROM Sales.InvoicesHeader AS inh
+        INNER JOIN inserted ON inserted.InvoiceId = inh.InvoiceId
+    END;
+
+END;
+GO
+
+-- create trigger when delete InvoicesDetail
+
+CREATE OR ALTER TRIGGER UpdateInvoicesHeaderIfDeleteInvoicesDetail
+ON Sales.InvoicesDetail
+AFTER DELETE
+AS
+BEGIN
+    UPDATE inh
+    SET 
+    TaxBase = (ISNULL((
+        SELECT SUM(ind.Quantity * ((ind.UnitPrice * ((100 - ISNULL(ind.Discount, 0)) / 100)))) 
+        FROM Sales.InvoicesDetail AS ind 
+        WHERE ind.InvoiceId = inh.InvoiceId), 0)),
+    TotalVat = (ISNULL((
+        SELECT SUM(ind.TotalLine - (ind.Quantity * ((ind.UnitPrice * ((100 - ISNULL(ind.Discount, 0)) / 100))))) 
+        FROM Sales.InvoicesDetail AS ind 
+        WHERE ind.InvoiceId = inh.InvoiceId), 0)),
+    Total = (ISNULL((
+        SELECT SUM(ind.TotalLine) 
+        FROM Sales.InvoicesDetail AS ind 
+        WHERE ind.InvoiceId = inh.InvoiceId), 0))
+    FROM Sales.InvoicesHeader AS inh
+    INNER JOIN deleted ON deleted.InvoiceId = inh.InvoiceId
+END;
+GO
+
+-- create trigger when update VatTypes
+
+CREATE OR ALTER TRIGGER UpdateTotalOnUpdateRate
+ON Sales.VatTypes
+AFTER UPDATE
+AS
+BEGIN
+    IF UPDATE(Rate)
+    BEGIN
+        UPDATE ind
+        SET TotalLine = ind.Quantity * 
+            ((ind.UnitPrice * ((100 - ISNULL(ind.Discount, 0)) / 100)) + 
+            ((ind.UnitPrice * ((100 - ISNULL(ind.Discount, 0)) / 100)) * 
+            (ISNULL((SELECT Rate FROM Sales.VatTypes WHERE VatTypeId = ind.VatTypeId), 0) / 100)))
+        FROM Sales.InvoicesDetail AS ind
+        INNER JOIN inserted ON ind.VatTypeId = inserted.VatTypeId
+    END;
+
+    BEGIN
+        UPDATE inh
+        SET TaxBase = (SELECT SUM(ind.Quantity * ((ind.UnitPrice * ((100 - ISNULL(ind.Discount, 0)) / 100)))) 
+                        FROM Sales.InvoicesDetail AS ind 
+                        WHERE ind.InvoiceId = inh.InvoiceId),
+            TotalVat = (SELECT SUM(ind.TotalLine - (ind.Quantity * ((ind.UnitPrice * ((100 - ISNULL(ind.Discount, 0)) / 100))))) 
+                        FROM Sales.InvoicesDetail AS ind 
+                        WHERE ind.InvoiceId = inh.InvoiceId),
+            Total = (SELECT SUM(ind.TotalLine) 
+                        FROM Sales.InvoicesDetail AS ind 
+                        WHERE ind.InvoiceId = inh.InvoiceId)
+        FROM Sales.InvoicesHeader AS inh
+        INNER JOIN Sales.InvoicesDetail AS ind ON ind.InvoiceId = inh.InvoiceId
+        INNER JOIN inserted ON inserted.VatTypeId = ind.VatTypeId
+    END;
+END;
+GO

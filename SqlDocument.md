@@ -119,3 +119,107 @@ CREATE TABLE Usuarios (
 La columna FechaRegistro tiene un valor predeterminado `GETDATE()`, que establece automáticamente la fecha de registro del usuario en la fecha actual cuando no se proporciona explícitamente un valor durante la inserción.
 
 La columna EstadoActivo tiene un valor predeterminado de `1`, lo que indica que el usuario está activo por defecto.
+
+# Ventajas y desventajas columnas con/sin nulos
+
+**Ventajas de permitir valores nulos:**
+
+- **Flexibilidad en los datos:**
+ Permite representar datos faltantes o desconocidos de manera explícita, lo que puede ser útil en situaciones donde no todos los valores son conocidos o relevantes.
+
+- **Ahorro de espacio:** 
+Los valores nulos no ocupan espacio de almacenamiento en la base de datos, lo que puede ayudar a reducir el consumo de recursos, especialmente en columnas que tienden a tener muchos valores nulos.
+- **Compatibilidad con estándares de datos:**
+ Algunos estándares de datos o convenciones pueden requerir que ciertas columnas admitan valores nulos para cumplir con los requisitos de representación de datos.
+
+**Desventajas de permitir valores nulos:**
+
+- **Complejidad en las consultas:** 
+Las consultas que involucran columnas con valores nulos pueden volverse más complejas, ya que es necesario tener en cuenta la posibilidad de valores nulos y manejarlos adecuadamente en las cláusulas WHERE o en las operaciones de JOIN.
+
+- **Mayor riesgo de errores:** 
+El manejo incorrecto de valores nulos en las consultas puede provocar resultados inesperados o errores en la lógica de la aplicación, especialmente si no se tiene en cuenta la posibilidad de valores nulos.
+
+- **Integridad de los datos:** 
+Los valores nulos pueden dificultar el mantenimiento de la integridad de los datos, ya que es posible introducir inconsistencias si no se manejan adecuadamente.
+
+# Diagrama base de datos Invoices
+
+![Texto alternativo](images/Diagram_Invoices.png)
+
+
+# Campos clave compuestos
+
+Implica utilizar más de un campo para crear la PK.
+
+**Cuando es buena práctica usarlos:**
+
+1. **Cuando el modelado es complejo:**
+Si para identificar una tabla es necesario otro campo más ya que para identificarla es necesario más datos. Ejemplo: un prestamo de una biblioteca, su clave podria ser el Id del libro y el Id del usuario a quien se lo ha prestado.   
+
+2. **Evitar duplicaciones:**
+A veces con un campo clave no es suficiente para evitar duplicidad de registros.
+Por ejemplo un empleado que tenga el mismo nombre y distinto nº de identificación.
+
+3. **Optimización de consultas:**
+Puede ser más eficiente incluir una clave compuesta con los campos que se utilizan mas frecuentemente.
+
+4. **Normalización:**
+A veces es necesario utilizar campos clave compuestos para satisfacer ciertas formas normales. Ejemplo: en la tercera **forma normal** (3NF), todas las columnas no clave deben depender únicamente de la clave principal.
+
+5. **Complejidad y mantenibilidad:**
+Utilizar campos clave compuestos puede agregar complejidad al diseño de la base de datos y a las consultas que interactúan con ella. Es importante considerar si esta complejidad es justificada por las necesidades del sistema y si se puede mantener a lo largo del tiempo.
+
+## Formas normales
+Las formas normales son reglas que se aplican al diseño de bases de datos relacionales para reducir la redundancia de datos y mejorar la integridad de los mismos. Hay varias formas normales, que se denotan como 1NF, 2NF, 3NF, BCNF (Forma Normal de Boyce-Codd), 4NF y 5NF. Aquí te proporciono una descripción general de cada una:
+
+- **Primera Forma Normal (1NF):**
+  - En 1NF, todos los atributos de una relación deben ser atómicos, es decir, no deben tener valores múltiples o repetidos.
+  - Cada celda en una tabla debe contener un solo valor, no conjuntos de valores.
+
+- **Segunda Forma Normal (2NF):**
+  - Una tabla está en 2NF si está en 1NF y todos sus atributos no clave dependen completamente de la clave primaria.
+  - Si la tabla tiene una clave primaria compuesta, cada atributo no clave debe depender de la totalidad de la clave, no de solo una parte de ella.
+
+- **Tercera Forma Normal (3NF):**
+  - Una tabla está en 3NF si está en 2NF y no tiene dependencias transitivas.
+  - Esto significa que ningún atributo no clave debe depender de otro atributo no clave. Todos los atributos no clave deben depender directamente de la clave primaria.
+
+- **Forma Normal de Boyce-Codd (BCNF):**
+  - Similar a la 3NF, pero más estricta en cuanto a la eliminación de redundancias.
+  - Una tabla está en BCNF si, para cada dependencia funcional no trivial X → Y, X es una superclave.
+  - En otras palabras, cada determinante de una dependencia funcional debe ser una superclave, lo que significa que no puede haber dependencias funcionales no triviales de atributos que no son claves.
+
+- **Cuarta Forma Normal (4NF):**
+  - Introduce el concepto de independencia multivaluada.
+  - Una tabla está en 4NF si no tiene dependencias multivaluadas y dependencias funcionales entre atributos no clave.
+
+- **Quinta Forma Normal (5NF):**
+  - También conocida como Proyección de Junta de Proyección y Dependencia (PJ/NF)
+  - Es una forma normal extremadamente rara y no se aplica comúnmente en el diseño de bases de datos.
+
+
+# Ventajas / desventajas campos calculados y triggers
+
+## Ventajas campos calculados
+
+- **Simplicidad:** Simplifica las consultas.
+- **Consistencia de datos:** Garantiza que los datos se actualicen automatica y correctamente.
+- **Rendimiento:** Si se almacenan en la base de atos, mejoran el rendimiento ya que evitan recalcular los datos en cada consulta.
+
+## Desventajas campos calculados
+
+- **Uso de recursos:** Pueden consumir recursos CPU y almacenamiento
+- **Complejidad de mantenimiento:** Añaden complejidad adicional al diseño de la base de datos y el mantenimiento del código.
+
+## Ventajas triggers
+
+- **Automatización de acciones:** Permiten la automatización de acciones, como actualizacion de datos en otras tablas, envío de notificaciones, en función de los eventos.
+
+- **Integridad de los datos:** Garantizan la integridad al aplicar reglas de negocio o restricciones que no pueden ser expresadas por clave externa o de integridad referencial.
+
+## Desventajas triggers
+
+- **Complejidad y mantenibilidad:** Añaden complejidad adicional al diseño y mantenimiento de la base de datos.
+
+- **Impacto en el rendimiento:** Pueden agregar sobrecarga adicional, sobretodo en tablas con muchos registros o en sistemas con alta concurrencia
