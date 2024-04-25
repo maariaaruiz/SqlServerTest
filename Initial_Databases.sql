@@ -67,6 +67,193 @@ ADD
 	image_column IMAGE,
 	geography_column GEOGRAPHY,
 	geometry_column GEOMETRY,
-	hierachyid_column HIERARCHYID,
-	rowversion_column ROWVERSION
+	hierachyid_column HIERARCHYID	
+GO
+
+-- default Test data
+
+INSERT INTO [dbo].[Test] (
+	[Code],
+    char_column,
+    varchar_column,
+    text_column,
+    nchar_column,
+    nvarchar_column,
+    ntext_column,
+    int_column,
+    smallint_column,
+    decimal_column,
+    float_column,
+    bigint_column,
+    numeric_column,
+    bit_column,
+    money_column,
+    smallmoney_column,
+    real_column,
+    tinyint_colum,
+    date_column,
+    time_colum,
+    datetime_column,
+    datetime2_column,
+    datetimeoffset_column,
+    smalldatetime_colum,
+    varbinary_column,
+    binary_column,
+    uniqueidentifier_column,
+    xml_column,
+    image_column,
+    geography_column,
+    geometry_column,
+    hierachyid_column   
+) VALUES (
+	'Code 001',
+    'valorVhar',
+    'valorVarchar',
+    'valorText',
+    N'valorNchar',
+    N'valorNvarchar',
+    N'valorNtext',
+    123,
+    456,
+    78.90,
+    123.45,
+    1234567890,
+    123.456,
+    1,
+    100.50,
+    50.25,
+    3.14159,
+    5,
+    '2024-04-25',
+    '12:34:56',
+    '2024-04-25T12:34:56',
+    '2024-04-25T12:34:56.1234567',
+    '2024-04-25T12:34:56.1234567-07:00',
+    '2024-04-25T12:34:56',
+    0x0123456789ABCDEF, -- valor varbinary
+    0x0123456789, -- valor binary 
+    'F961CFFF-8D55-4C36-99D9-107C44A80F6C', -- valor uniqueidentifier 
+    '<xml>datos</xml>', -- valor xml 
+    0x012345, -- valor image 
+    geography::Point(47.65100, -122.34900, 4326), -- valor geography 
+    geometry::Point(47.65100, -122.34900, 4326), -- valor geometry 
+    '/1/' -- valor hierarchyid    
+);
+GO
+
+-- copy table test from smcdb1 to smcdb2
+SELECT *
+INTO smcdb2.dbo.Test
+FROM smcdb1.dbo.Test;
+GO
+
+
+-- join tables and databases
+SELECT *
+FROM smcdb1.dbo.Test AS t1
+INNER JOIN smcdb2.dbo.Test AS t2
+	ON t1.nvarchar_column COLLATE Latin1_General_CS_AS = t2.nvarchar_column
+
+--create table customers
+
+USE smcdb1;
+GO
+
+CREATE SCHEMA Sales; -- create schema
+GO
+
+CREATE TABLE Sales.Customers (
+    CustomerId UNIQUEIDENTIFIER PRIMARY KEY,
+    Name VARCHAR(50) NOT NULL,
+    Surname VARCHAR(50) NOT NULL,
+    DocumentNumber VARCHAR(15) UNIQUE NOT NULL
+);
+GO
+
+--create table Country
+
+USE smcdb1;
+GO
+
+CREATE TABLE Sales.Countries (
+    CountryId UNIQUEIDENTIFIER PRIMARY KEY,
+    CountryName VARCHAR(50) NOT NULL
+);
+GO
+
+-- create table Address
+
+USE smcdb1;
+GO
+
+CREATE TABLE Sales.Address (
+    AddressId UNIQUEIDENTIFIER PRIMARY KEY,
+    Street VARCHAR(100) NOT NULL,
+    CountryId UNIQUEIDENTIFIER,
+    FOREIGN KEY (CountryId) REFERENCES Sales.Countries(CountryId));
+GO
+
+-- create table InvoicesHeader
+USE smcdb1;
+GO
+
+CREATE TABLE Sales.InvoicesHeader (
+	InvoiceId UNIQUEIDENTIFIER PRIMARY KEY,
+    InvoiceDate DATETIME DEFAULT GETDATE(),
+    CustomerId UNIQUEIDENTIFIER,
+    AddressId UNIQUEIDENTIFIER,
+    TaxBase MONEY NOT NULL,
+    TotalVat MONEY NOT NULL,
+    Total MONEY NOT NULL,
+    FOREIGN KEY (CustomerId) REFERENCES Sales.Customers(CustomerId),
+    FOREIGN KEY (AddressId) REFERENCES Sales.Address(AddressId),
+);
+GO
+
+-- create table Products
+
+USE smcdb1;
+GO
+
+CREATE TABLE Sales.Products(
+	ProductId UNIQUEIDENTIFIER PRIMARY KEY,
+	ProductName VARCHAR(100) NOT NULL
+);
+GO
+
+
+-- create table VatTypes
+
+USE smcdb1;
+GO
+
+CREATE TABLE Sales.VatTypes(
+	VatTypeId UNIQUEIDENTIFIER PRIMARY KEY,
+	VatTypeName VARCHAR(50) NOT NULL,
+	Rate DECIMAL(5, 2) NOT NULL
+);
+
+GO
+
+-- create table InvoicesDetail
+
+USE smcdb1;
+GO
+
+CREATE TABLE Sales.InvoicesDetail(
+	InvoiceId UNIQUEIDENTIFIER,
+	RowNumber INT,
+	ProductId UNIQUEIDENTIFIER,
+	Description VARCHAR(255) NOT NULL,
+	Quantity INT NOT NULL,
+	UnitPrice MONEY NOT NULL,
+	Discount DECIMAL(10,2),
+	VatTypeId UNIQUEIDENTIFIER,
+	TotalLine MONEY NOT NULL
+	PRIMARY KEY (InvoiceId, RowNumber)
+    FOREIGN KEY (VatTypeId) REFERENCES Sales.VatTypes(VatTypeId),
+    FOREIGN KEY (ProductId) REFERENCES Sales.Products(ProductId),
+    FOREIGN KEY (InvoiceId) REFERENCES Sales.InvoicesHeader(InvoiceId)
+);
+
 GO
