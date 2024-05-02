@@ -360,3 +360,111 @@ BEGIN
     END;
 END;
 GO
+
+-- insert data to customers
+USE smcdb1;
+GO 
+INSERT INTO Sales.Customers VALUES (NEWID(),'Piter', 'Jackson','87569821K');
+GO
+
+-- insert data to country
+USE smcdb1;
+GO 
+INSERT INTO Sales.Countries VALUES (NEWID(),'Country 1');
+GO
+
+-- insert data to address
+USE smcdb1;
+GO 
+
+BEGIN
+DECLARE @CountryId UNIQUEIDENTIFIER;
+SELECT TOP 1 @CountryId = CountryId FROM Sales.Countries ORDER BY NEWID(); 
+INSERT INTO Sales.Address VALUES (NEWID(),'Street 1', @CountryId);
+END
+GO
+
+-- insert data to products
+USE smcdb1;
+GO 
+INSERT INTO Sales.Products VALUES (NEWID(),'Product 1');
+GO
+
+
+-- insert data to vat types
+USE smcdb1;
+GO 
+INSERT INTO Sales.VatTypes VALUES (NEWID(),'Vat Type 1', 0.21);
+INSERT INTO Sales.VatTypes VALUES (NEWID(),'Vat Type 2', 0.10);
+GO
+
+--generate aleathory invoices (35 min)
+
+DECLARE @CustomerId UNIQUEIDENTIFIER;
+DECLARE @AddressId UNIQUEIDENTIFIER;
+DECLARE @ProductId UNIQUEIDENTIFIER;
+DECLARE @VatTypeId1 UNIQUEIDENTIFIER;
+DECLARE @VatTypeId2 UNIQUEIDENTIFIER;
+DECLARE @InvoiceId UNIQUEIDENTIFIER;
+DECLARE @RowNumber INT;
+DECLARE @NumberOfInvoices INT = 10000; -- number of invoices to generate
+
+-- get IDs
+SELECT TOP 1 @CustomerId = CustomerId FROM Sales.Customers ORDER BY NEWID(); 
+SELECT TOP 1 @AddressId = AddressId FROM Sales.Address ORDER BY NEWID();
+SELECT TOP 1 @ProductId = ProductId FROM Sales.Products ORDER BY NEWID(); 
+SELECT TOP 1 @VatTypeId1 = VatTypeId FROM Sales.VatTypes WHERE Rate = 0.21; 
+SELECT TOP 1 @VatTypeId2 = VatTypeId FROM Sales.VatTypes WHERE Rate = 0.10; 
+
+-- process
+DECLARE @i INT = 1;
+WHILE @i <= @NumberOfInvoices
+BEGIN
+    
+    SET @InvoiceId = NEWID();
+
+    -- generate invoice header data
+    DECLARE @InvoiceDate DATETIME = DATEADD(day, -RAND() * 365, GETDATE());
+    DECLARE @TaxBase MONEY = RAND() * 1000 + 100;
+    DECLARE @TotalVat MONEY = @TaxBase * 0.21; -- IVA al 21%
+    DECLARE @Total MONEY = @TaxBase + @TotalVat;
+
+    -- insert header
+    INSERT INTO Sales.InvoicesHeader (InvoiceId, InvoiceDate, CustomerId, AddressId, TaxBase, TotalVat, Total)
+    VALUES (@InvoiceId, @InvoiceDate, @CustomerId, @AddressId, @TaxBase, @TotalVat, @Total);
+
+
+    DECLARE @NumberOfLines INT = 50;
+
+    -- insert lines in header invoice
+    SET @RowNumber = 1;
+    WHILE @RowNumber <= @NumberOfLines
+    BEGIN
+        -- generate invoice lines data
+        DECLARE @Quantity INT = RAND() * 10 + 1;
+        DECLARE @UnitPrice MONEY = RAND() * 100 + 10;
+        DECLARE @Discount DECIMAL(10,2) = RAND() * 0.1;
+        DECLARE @VatTypeId UNIQUEIDENTIFIER = CASE WHEN RAND() > 0.5 THEN @VatTypeId1 ELSE @VatTypeId2 END;
+        DECLARE @TotalLine MONEY = @Quantity * @UnitPrice * (1 - @Discount) * (1 + (SELECT Rate FROM Sales.VatTypes WHERE VatTypeId = @VatTypeId));
+
+        -- insert invoice lines data
+        INSERT INTO Sales.InvoicesDetail (InvoiceId, RowNumber, ProductId, Description, Quantity, UnitPrice, Discount, VatTypeId, TotalLine)
+        VALUES (@InvoiceId, @RowNumber, @ProductId, 'Producto ' + CAST(@RowNumber AS VARCHAR(10)), @Quantity, @UnitPrice, @Discount, @VatTypeId, @TotalLine);
+
+        SET @RowNumber = @RowNumber + 1;
+    END;
+
+    SET @i = @i + 1;
+END;
+
+
+-- different collation in table
+
+CREATE TABLE DifferentCollation (
+    DifferentCollationId UNIQUEIDENTIFIER PRIMARY KEY,
+    LatinGeneralCollation NVARCHAR(100) COLLATE Latin1_General_CI_AS, -- collation for the general Latin language (case-insensitive)
+    FrenchCollation NVARCHAR(100) COLLATE French_CI_AI, --  collation for the French language (case-insensitive and accent-insensitive)
+);
+
+
+

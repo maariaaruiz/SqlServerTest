@@ -223,3 +223,31 @@ Las formas normales son reglas que se aplican al diseño de bases de datos relac
 - **Complejidad y mantenibilidad:** Añaden complejidad adicional al diseño y mantenimiento de la base de datos.
 
 - **Impacto en el rendimiento:** Pueden agregar sobrecarga adicional, sobretodo en tablas con muchos registros o en sistemas con alta concurrencia
+
+# Diferentes collation en campos de una misma tabla
+
+## Limitaciones
+
+- **Comparaciones y ordenamientos:**
+
+Pueden fallar los resultados en la comparaciones y ordenamiento de esos campos, ya que los collation determinan como se ordenan y comparan los datos.
+
+- **Indexación:**
+
+La creación de índices en campos con diferentes collation puede ser complicado o imposible en función de algunos sistemas de gestión de la base de datos. Afecta al rendimiento de las consultas.
+
+- **Join y uniones:**
+
+Al hacer un JOIN o UNION entre tablas que contengan campos con diferente collation  es probable que se produzcan error o resultados inexperados por la comparción que se realiza de los datos.
+
+- **Conversiones implícitas:**
+
+Puede que el sistema de gestión de la base de datos realize conversiones ímplicitas de tipos de datos para que coincida el collation. Afecta al rendimiento y precisión de las consultas.
+
+- **Costo de almacenamiento:**
+
+Es posible que se incremente el coste de almacenamiento ya que almancena información adicional por cada collation utilizado.
+
+
+
+
