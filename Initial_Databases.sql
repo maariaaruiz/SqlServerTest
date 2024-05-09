@@ -468,23 +468,29 @@ CREATE TABLE DifferentCollation (
 );
 GO
 
--- query with 12 months
+-- query without 12 months
 USE smcdb1;
 GO 
-SELECT YEAR(InvoiceDate) AS Year, 
-    SUM(Total) AS TotalInvoices, 
-    SUM(TotalVat) AS TotalVat, 
-    COUNT(*) AS Quantity ,
-    AVG(Total) AS AvgTotalInvoices,
-    STDEV(Total) AS StDevTotalInvoice
-FROM Sales.InvoicesHeader
-GROUP BY YEAR(InvoiceDate);
+SELECT 
+    pro.ProductName as 'Type',
+    YEAR(inh.InvoiceDate) AS Year, 
+    SUM(inh.Total) AS TotalInvoices, 
+    SUM(inh.TotalVat) AS TotalVat, 
+    COUNT(id.Quantity) AS Quantity ,
+    AVG(inh.Total) AS AvgTotalInvoices,
+    STDEV(inh.Total) AS StDevTotalInvoice
+FROM Sales.Products AS pro
+    INNER JOIN Sales.InvoicesHeader AS inh 
+    INNER JOIN Sales.InvoicesDetail AS id ON id.InvoiceId = inh.InvoiceId
+    ON pro.ProductId = id.ProductId
+GROUP BY pro.ProductName, YEAR(InvoiceDate);
 GO
 
+--query without finish 
 SELECT
     YEAR(calendar.fecha) AS año,
     MONTH(calendar.fecha) AS mes,
-    COALESCE(SUM(transacciones.gasto), 0) AS gasto_total
+    COALESCE(SUM(ih1.Total), 0) AS gasto_total
 FROM (
     SELECT
         YEAR(ih.InvoiceDate) AS año,
@@ -505,11 +511,11 @@ FROM (
         SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12
     ) AS months
     GROUP BY
-        YEAR(fecha_hora),
+        YEAR(ih.InvoiceDate),
         months.mes
 ) AS calendar
 LEFT JOIN
-    transacciones ON YEAR(calendar.fecha) = YEAR(transacciones.fecha_hora) AND MONTH(calendar.fecha) = MONTH(transacciones.fecha_hora)
+    Sales.InvoicesHeader ih1 ON YEAR(calendar.fecha) = YEAR(ih1.InvoiceDate) AND MONTH(calendar.fecha) = MONTH(ih1.InvoiceDate)
 GROUP BY
     YEAR(calendar.fecha),
     MONTH(calendar.fecha)
