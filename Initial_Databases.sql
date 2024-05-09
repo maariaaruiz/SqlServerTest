@@ -459,12 +459,62 @@ END;
 
 
 -- different collation in table
-
+USE smcdb1;
+GO 
 CREATE TABLE DifferentCollation (
     DifferentCollationId UNIQUEIDENTIFIER PRIMARY KEY,
     LatinGeneralCollation NVARCHAR(100) COLLATE Latin1_General_CI_AS, -- collation for the general Latin language (case-insensitive)
     FrenchCollation NVARCHAR(100) COLLATE French_CI_AI, --  collation for the French language (case-insensitive and accent-insensitive)
 );
+GO
 
+-- query with 12 months
+USE smcdb1;
+GO 
+SELECT YEAR(InvoiceDate) AS Year, 
+    SUM(Total) AS TotalInvoices, 
+    SUM(TotalVat) AS TotalVat, 
+    COUNT(*) AS Quantity ,
+    AVG(Total) AS AvgTotalInvoices,
+    STDEV(Total) AS StDevTotalInvoice
+FROM Sales.InvoicesHeader
+GROUP BY YEAR(InvoiceDate);
+GO
+
+SELECT
+    YEAR(calendar.fecha) AS año,
+    MONTH(calendar.fecha) AS mes,
+    COALESCE(SUM(transacciones.gasto), 0) AS gasto_total
+FROM (
+    SELECT
+        YEAR(ih.InvoiceDate) AS año,
+        months.mes AS mes,
+        CONCAT(
+            YEAR(ih.InvoiceDate), 
+            '-', 
+            CASE 
+                WHEN months.mes < 10 THEN CONCAT('0', months.mes)
+                ELSE CAST(months.mes AS CHAR)
+            END,
+            '-01'
+        ) AS fecha
+    FROM
+        Sales.InvoicesHeader ih 
+    CROSS JOIN (
+        SELECT 1 AS mes UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL 
+        SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12
+    ) AS months
+    GROUP BY
+        YEAR(fecha_hora),
+        months.mes
+) AS calendar
+LEFT JOIN
+    transacciones ON YEAR(calendar.fecha) = YEAR(transacciones.fecha_hora) AND MONTH(calendar.fecha) = MONTH(transacciones.fecha_hora)
+GROUP BY
+    YEAR(calendar.fecha),
+    MONTH(calendar.fecha)
+ORDER BY
+    año,
+    mes;
 
 
