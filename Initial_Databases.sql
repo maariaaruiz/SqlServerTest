@@ -523,4 +523,120 @@ ORDER BY
     año,
     mes;
 
+-- 5 cutomers than most invoiced
+
+USE smcdb1;
+GO
+
+BEGIN
+SELECT TOP 5
+        cus.Name,
+        cus.Surname, 
+        cus.DocumentNumber
+FROM Sales.Customers AS cus
+INNER JOIN Sales.InvoicesHeader AS inh ON inh.CustomerId = cus.CustomerId
+GROUP BY cus.Name, cus.Surname, cus.DocumentNumber
+
+END
+GO
+
+-- order countries invoiced
+
+USE smcdb1;
+GO
+
+BEGIN
+SELECT 
+    cou.CountryName,
+    SUM(inh.Total) as [Invoiced Total]
+FROM Sales.Countries AS cou
+    INNER JOIN Sales.Address AS adr ON  adr.CountryId = cou.CountryId 
+        INNER JOIN Sales.InvoicesHeader AS inh ON  inh.AddressId = adr.AddressId
+GROUP BY cou.CountryName
+ORDER BY [Invoiced Total]
+END
+GO
+
+--query invoiced 3 months ago
+
+USE smcdb1;
+GO
+BEGIN
+DECLARE @StartDate DATETIME;
+DECLARE @EndDate DATETIME;
+
+SET @StartDate = DATEADD(MONTH, -2, GETDATE());
+SET @EndDate = GETDATE(); 
+
+SELECT SUM(Total) AS TotalInvoicedThreeMonths
+FROM Sales.InvoicesHeader
+WHERE InvoiceDate BETWEEN @StartDate AND @EndDate
+END
+GO
+
+--remove constraint between InvoiceHeaders and InvoiceDetails
+USE smcdb1;
+GO
+SELECT CONSTRAINT_NAME
+FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+WHERE TABLE_NAME = 'InvoicesDetail' AND COLUMN_NAME = 'InvoiceId';
+GO
+
+ALTER TABLE Sales.InvoicesDetail DROP CONSTRAINT FK__InvoicesD__Invoi__4BAC3F29;
+
+
+-- trigger on the Sales.InvoicesHeader table to avoid deletions if there are associated details
+USE smcdb1;
+GO
+
+CREATE TRIGGER PreventInvoiceHeaderDelete
+ON Sales.InvoicesHeader
+INSTEAD OF DELETE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (
+        SELECT 1
+        FROM deleted d
+        JOIN Sales.InvoicesDetail id ON d.InvoiceId = id.InvoiceId
+    )
+    BEGIN
+        RAISERROR  ('You cannot delete an invoice that has details associated with it.', 16, 1)
+    END;
+    ELSE
+    BEGIN
+        DELETE FROM Sales.InvoicesHeader WHERE InvoiceId IN (SELECT InvoiceId FROM deleted);
+    END;
+END;
+GO
+
+-- trigger on Sales.InvoicesDetail table to avoid inserts if InvoiceId does not exist in Sales.InvoicesHeader
+CREATE TRIGGER CheckInvoiceHeaderInsert
+ON Sales.InvoicesDetail
+AFTER INSERT
+AS
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        LEFT JOIN Sales.InvoicesHeader ih ON i.InvoiceId = ih.InvoiceId
+        WHERE ih.InvoiceId IS NULL
+    )
+    BEGIN
+        RAISERROR  ('Cannot insert invoice detail with non-existent InvoiceId.', 16, 1)
+        ROLLBACK TRANSACTION;
+    END;
+END;
+GO
+
+
+-- add column autocalculated totalbase + totalvat
+
+USE smcdb1;
+GO
+
+ALTER TABLE Sales.InvoicesHeader ADD TotalAutoCalculated AS (TaxBase + TotalVat);
+
+
 

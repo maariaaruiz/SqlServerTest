@@ -248,6 +248,22 @@ Puede que el sistema de gestión de la base de datos realize conversiones ímpli
 
 Es posible que se incremente el coste de almacenamiento ya que almancena información adicional por cada collation utilizado.
 
+# Ventajas/ desventajas campos calculados:
 
+## Ventajas:
+- **Eficiencia en el almacenamiento de datos:** Los campos calculados pueden ayudar a reducir la redundancia de datos al calcular valores en lugar de almacenarlos físicamente. Esto puede resultar en un uso más eficiente del espacio de almacenamiento.
 
+- **Consistencia de datos:** Al calcular valores en lugar de almacenarlos, se garantiza que los datos sean coherentes y estén actualizados en todo momento. Esto elimina la posibilidad de inconsistencias debido a errores humanos o actualizaciones incompletas.
 
+- **Facilidad de mantenimiento:** Los campos calculados simplifican el mantenimiento de la base de datos al eliminar la necesidad de actualizar valores calculados manualmente cuando cambian los datos subyacentes. Esto reduce la carga de trabajo administrativa y minimiza el riesgo de errores.
+
+- **Mejora del rendimiento de consultas:** Al calcular valores durante la consulta en lugar de recuperarlos de la base de datos, se puede mejorar el rendimiento de las consultas al evitar cálculos repetitivos o complejos en tiempo de ejecución.
+
+## Desventajas:
+- **Complejidad de la lógica de cálculo:** A medida que se agregan más campos calculados y la lógica de cálculo se vuelve más compleja, puede ser difícil de entender y mantener. Esto puede llevar a errores y dificultar la depuración.
+
+- **Impacto en el rendimiento de actualizaciones y operaciones de escritura:** Los campos calculados pueden ralentizar las operaciones de escritura, especialmente si involucran cálculos complejos o grandes volúmenes de datos. Esto se debe a que cada actualización puede desencadenar el recálculo de los valores calculados.
+
+- **Limitaciones de plataforma y compatibilidad:** Algunas plataformas de base de datos pueden tener limitaciones en cuanto a la complejidad o el tipo de cálculos que se pueden realizar en campos calculados. Además, la compatibilidad entre diferentes sistemas de gestión de bases de datos puede variar, lo que puede afectar la portabilidad de la aplicación.
+
+- **Mayor consumo de recursos:** Si los cálculos son intensivos en recursos, como operaciones matemáticas complejas o funciones definidas por el usuario, los campos calculados pueden aumentar el consumo de recursos del servidor de base de datos y afectar el rendimiento general del sistema.
