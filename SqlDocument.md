@@ -267,3 +267,87 @@ Es posible que se incremente el coste de almacenamiento ya que almancena informa
 - **Limitaciones de plataforma y compatibilidad:** Algunas plataformas de base de datos pueden tener limitaciones en cuanto a la complejidad o el tipo de cálculos que se pueden realizar en campos calculados. Además, la compatibilidad entre diferentes sistemas de gestión de bases de datos puede variar, lo que puede afectar la portabilidad de la aplicación.
 
 - **Mayor consumo de recursos:** Si los cálculos son intensivos en recursos, como operaciones matemáticas complejas o funciones definidas por el usuario, los campos calculados pueden aumentar el consumo de recursos del servidor de base de datos y afectar el rendimiento general del sistema.
+
+# Diferencia Índice Clusterizado y No Clusterizado
+
+# Índice Clusterizado
+
+- **Ordenamiento físico de los datos:**
+Las filas de datos se ordenan físicamente en el mismo orden que las claves del índice.
+
+- **Estructura de la tabla:**
+Solo puede haber un índice clusterizado por tabla (ya que establece el orden físico de la tabla)
+
+- **Rendimiento de las consultas:**
+Las consultas que utilizan este índice para buscar o seleccionar datos son mas rápidas
+
+- **Actualizaciones y fragmentación:**
+Las inserciones, actualizaciones y eliminaciones pueden causar fragmentación (espacios vacíos a causa de estas operaciones) en los índices clusterizados, ya que pueden reorganizar físicamente las filas de la tabla
+
+# Índice No Clusterizado
+
+- **Ordenamiento lógico de los datos:**
+La estructura de este índice contiene las claves del índice y un puntero a las filas de datos correspondientes (las filas no están ordenadas físicamente)
+
+- **Estructura del índice:**
+Puede haber varios ínidices en una tabla. Cada uno tiene su estructura separada.
+
+- **Rendimiento de las consultas:**
+Las consultas de búsqueda o selección de datos son rápidas en cuanto al acceso al índice, pero después tienen que buscar las filas de datos utilizando los punteros (puede resultar mútiples búsquedas de disco si las filas están dispersas)
+
+- **Actualizaciones y fragmentaciones:**
+Las inserciones, actualizaciones y eliminaciones no causan tanta fragmentación ya que no reorganizan físicamente las filas de datos en la tabla
+
+Los índices clusterizados son útiles para columnas con búsquedas secuenciales o rangos
+
+Los índices no clusterizados son útiles para columnas con búsquedas de igualdad
+
+# Otros tipos de índices
+
+## Índice único:
+Es similar al no clusterizado, garantiza que los valores de la columna sean únicos en toda la tabla. Permite un acceso rápido a los datos ya que busca por un único valor
+
+## Índice compuesto
+Se crea en múltiples columnas en vez de una sola. Puede mejorar el rendimiento de consultas que utilizan la cláusula WHERE con múltiples condiciones
+
+## Índice filtrado:
+Es un índice no clusterizado que incluye solo las filas que cumplen un predicado específico.
+Es útil cuando se necesitan indexdar una parte de los datos de una tabla, esto reduce el tamaño del índice y mejora el rendimiento de las consultas que utlicen ese predicado
+
+## Índice espacial:
+Es utilizado para optimizar consultas con datos espaciales como coordenadas geográficas. Permite búsquedas basadas en la proximidad espacial
+
+## Índice de texto completo:
+Para búsquedas de texto en grandes cantidades de datos. Proporciona una búsqueda mas avanzada más allá de las coincidencias exactas de palabras
+
+## Índice XML:
+Para optimizar consultas de datos almacenados en columnas XML
+
+## Índice de columna calculada:
+Se basa en una expresión calculada en vez de los valores directos de una columna. Útil cuando se necesitan columnas frecuentes basadas en resultados de cálculos o funciones
+
+## Índice de clave filtrada:
+Similar al índice filtrado pero se aplica a las claves de las tablas relacionadas en una restricción de clave foránea. Esto puede mejorar el rendimiento de las consultas de unión
+
+## ¿Porqué hay que actulizar los índices?
+
+Cuando se insertan, actualizan o eliminan filas los índices pueden volverse fragmentados o desactilizados porque las consultas se pueden ejecutar mas lentamente y que tiene que buscar entre más datos o índices fragmentados.
+
+Al actualizar los índices de manera regular, se reduce la probabilidad de bloqueos y contención de la base de datos (muy importante en sistemas con alta concurrencia con múltiples usuarios o aplicaciones acceden a los mismos datos)
+
+## ¿Cómo se debe actualizar los índices?
+
+- **Reconstrucción de índices:**
+Consiste en crear de nuevo el índice. Esto elimina la fragmentación y actualiza las estadística del índice. En muchos sitemas de gestión de bases de datos puedes realizalo con comandos como ALTER INDEX ... REBUILD
+
+- **Reorganización de índices:**
+Elimina la fragmentación física del índice al reorganizar las páginas de datos y hojas del índice. Comando: ALTER INDEX .. REORGANIZE
+
+- **Actualizac*ión de estadísticas:**
+Es importante mantener actualizadas las estadísticas de la base de datos. Ayudan a generar planes de ejecución eficientes. Comando: UPDATE STATISTICS
+
+- **Programación regular:**
+Es recomendable programar la actualización de los índices de manera regular como parte de las tareas de mantenimiento de la base de datos. Diaria, semanal o mensualmente según la cantidad de cambios en los datos
+
+- **Monitoreo y ajuste:**
+Es importante monitorear el rendimiento para ajustar la estrategia de mantenimiento de los índices.
