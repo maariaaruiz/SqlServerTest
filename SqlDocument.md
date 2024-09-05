@@ -351,3 +351,21 @@ Es recomendable programar la actualización de los índices de manera regular co
 
 - **Monitoreo y ajuste:**
 Es importante monitorear el rendimiento para ajustar la estrategia de mantenimiento de los índices.
+
+## Fillfactor
+
+Es una opción para la creación de índices para controlar el porcentaje de espacio de cada página de índice que se llena con datos. 
+
+El objetivo es dejar un espacio en cada página para que los datos se inserten y se actualicen sin producir muchas divisiones de páginas.
+
+El porcentaje que se establezca rellenara la página con datos y el porcentaje restante se reserva para las inserciones y actualizaciones.
+
+## ¿Qué es un índice único?
+
+Es un tipo especial de índice que garantiza que los valores en una columna o conjunto de columnas sean únicos en una tabla.
+
+No se pueden insertar filas que tengan valores duplicados en las columnas del índice.
+
+Sirve para prevenir duplicados, mejorar el rendimiento de una consulta ya que proporciona un acceso rápido, protege contra errores y simplifica reglas de negocio ya que evita realizar comprobaciones para garantizar la unicidad de los datos.
+
+También se utiliza para definir claves primarias.
